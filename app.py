@@ -213,6 +213,22 @@ render_html("""
         opacity: 1 !important;
     }
 
+    div[data-testid="stSelectbox"] label {
+        color: #667085 !important;
+        font-size: 12px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.9px !important;
+        text-transform: uppercase !important;
+    }
+
+    div[data-testid="stSelectbox"] > div > div {
+        border-radius: 12px !important;
+    }
+
+    .filters-space {
+        margin-bottom: 8px;
+    }
+
     .result-row {
         display: flex;
         justify-content: space-between;
@@ -346,7 +362,7 @@ render_html("""
         grid-template-columns: 1fr 1fr;
         border-top: 1px solid #edf2f7;
         border-bottom: 1px solid #edf2f7;
-        margin-bottom: 16px;
+        margin-bottom: 0;
     }
 
     .status-box {
@@ -394,6 +410,10 @@ render_html("""
         align-items: center;
         gap: 5px;
         cursor: help;
+    }
+
+    .title-tooltip {
+        align-items: flex-start;
     }
 
     .tooltip-label::after {
@@ -453,6 +473,7 @@ render_html("""
         font-size: 10px;
         font-weight: 900;
         letter-spacing: 0;
+        text-transform: none;
     }
 
     .pill {
@@ -492,22 +513,28 @@ render_html("""
     }
 
     .card-footer {
+        border-top: 1px solid #edf2f7;
+        padding-top: 14px;
+        margin-top: 14px;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: #7185aa;
-        font-size: 12px;
-        padding-top: 4px;
-        gap: 12px;
+        flex-direction: column;
+        gap: 6px;
     }
 
-    .history-link {
-        color: #1769ff;
+    .footer-label {
+        color: #98a2b3;
+        font-size: 11px;
         font-weight: 900;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.9px;
         text-transform: uppercase;
-        text-decoration: none;
-        white-space: nowrap;
+    }
+
+    .footer-value {
+        color: #334155;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
     }
 
     .empty-state {
@@ -551,11 +578,6 @@ render_html("""
             flex-direction: column;
             align-items: flex-start;
             gap: 14px;
-        }
-
-        .card-footer {
-            flex-direction: column;
-            align-items: flex-start;
         }
     }
 
@@ -805,17 +827,19 @@ def prepare_data(df):
     col_equipo = get_required_column(df, "Equipo")
     col_clasificacion = get_required_column(df, "Campo de clasificación")
     col_denominacion = get_required_column(df, "Denominación de objeto técnico")
+    col_ubicacion = get_required_column(df, "Denominacion de la ubicacion tecnica")
 
     col_estado_calificacion = get_required_column(df, "ESTADO CALIFICACION (VIGENTE/VENCIDO)")
     col_dias_recal = get_required_column(df, "DIAS CONTROL  RECAL")
 
-    col_estado_limpieza = get_required_column(df, "ESTADO VALIDACION")
+    col_estado_limpieza = get_required_column(df, "MTTO ESTADO VALIDADO (VIGENTE/VENCIDO)")
     col_dias_reval = get_required_column(df, "DIAS CONTROL  REVAL")
 
     required_columns = [
         col_equipo,
         col_clasificacion,
         col_denominacion,
+        col_ubicacion,
         col_estado_calificacion,
         col_dias_recal,
         col_estado_limpieza,
@@ -831,6 +855,7 @@ def prepare_data(df):
     result["equipo"] = df[col_equipo]
     result["campo_clasificacion"] = df[col_clasificacion]
     result["denominacion"] = df[col_denominacion]
+    result["ubicacion_tecnica"] = df[col_ubicacion]
 
     result["estado_calificacion"] = df[col_estado_calificacion]
     result["dias_calificacion"] = df[col_dias_recal]
@@ -844,7 +869,8 @@ def prepare_data(df):
     result["search_text"] = (
         result["equipo"].astype(str) + " " +
         result["campo_clasificacion"].astype(str) + " " +
-        result["denominacion"].astype(str)
+        result["denominacion"].astype(str) + " " +
+        result["ubicacion_tecnica"].astype(str)
     ).apply(normalize_text)
 
     return result
@@ -931,10 +957,37 @@ def get_dias_label(estado, dias):
     return "Días de<br>vigencia"
 
 
+def es_no_calificado(estado):
+    return "no calificado" in normalize_text(estado)
+
+
+def es_calificado(estado):
+    estado_normalizado = normalize_text(estado)
+
+    if estado_normalizado in ["", "n/a", "na"]:
+        return False
+
+    return not es_no_calificado(estado)
+
+
+def es_no_validado(estado):
+    return "no validado" in normalize_text(estado)
+
+
+def es_validado(estado):
+    estado_normalizado = normalize_text(estado)
+
+    if estado_normalizado in ["", "n/a", "na"]:
+        return False
+
+    return not es_no_validado(estado)
+
+
 def render_card(row):
     equipo = safe_text(format_value(row.get("equipo", ""), ""))
     campo_clasificacion = safe_text(format_value(row.get("campo_clasificacion", ""), ""))
     denominacion = safe_text(format_value(row.get("denominacion", ""), "SIN NOMBRE").upper())
+    ubicacion_tecnica = safe_text(format_value(row.get("ubicacion_tecnica", ""), "N/A"))
 
     estado_calificacion_raw = format_value(row.get("estado_calificacion", ""), "N/A")
     dias_calificacion_raw = format_value(row.get("dias_calificacion", ""), "0")
@@ -992,7 +1045,9 @@ def render_card(row):
         <div class="status-grid">
             <div class="status-box">
                 <div class="status-title-blue">
-                    Calificación de<br>equipo
+                    <span class="tooltip-label title-tooltip" data-tooltip="Las calificaciones cuentan con 4 años de vigencia">
+                        Calificación de<br>equipo <span class="tooltip-icon">?</span>
+                    </span>
                 </div>
 
                 <div class="metric-row">
@@ -1012,7 +1067,9 @@ def render_card(row):
 
             <div class="status-box">
                 <div class="status-title-green">
-                    Validación de limpieza y<br>sanitización
+                    <span class="tooltip-label title-tooltip" data-tooltip="Las validaciones de limpieza y sanitización cuentan con 6 años de vigencia">
+                        Validación de limpieza y<br>sanitización <span class="tooltip-icon">?</span>
+                    </span>
                 </div>
 
                 <div class="metric-row">
@@ -1029,6 +1086,11 @@ def render_card(row):
                     <div class="pill {estado_limpieza_class}">{texto_dias_limpieza}</div>
                 </div>
             </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="footer-label">Ubicación técnica</div>
+            <div class="footer-value">{ubicacion_tecnica}</div>
         </div>
     </div>
     """
@@ -1059,7 +1121,7 @@ render_html("""
 </div>
 
 <div class="hero-description">
-    Busca por código Prebel, código SAP o nombre del equipo para verificar el estado calificado del equipo y estado validado del proceso de limpieza y sanitización.
+    Busca por Equipo, Campo de clasificación o Denominación de objeto técnico para verificar el estado calificado del equipo y estado validado del proceso de limpieza y sanitización.
 </div>
 """)
 
@@ -1068,14 +1130,50 @@ df = prepare_data(df_raw)
 
 search = st.text_input(
     label="Buscar",
-    placeholder="Ingresa código Prebel, código SAP o nombre del equipo..."
+    placeholder="Ingresa Equipo, Campo de clasificación o Denominación de objeto técnico..."
 )
 
-if not df.empty and search.strip():
+filter_col_1, filter_col_2 = st.columns(2)
+
+with filter_col_1:
+    filtro_calificaciones = st.selectbox(
+        "Filtro de calificaciones",
+        ["Todos", "Calificados", "No calificados"]
+    )
+
+with filter_col_2:
+    filtro_validaciones = st.selectbox(
+        "Filtro de validaciones",
+        ["Todos", "Validados", "No validados"]
+    )
+
+render_html('<div class="filters-space"></div>')
+
+filtered_df = df.copy()
+
+if not filtered_df.empty and search.strip():
     query = normalize_text(search)
-    filtered_df = df[df["search_text"].str.contains(query, na=False, regex=False)]
-else:
-    filtered_df = df.copy()
+    filtered_df = filtered_df[filtered_df["search_text"].str.contains(query, na=False, regex=False)]
+
+if not filtered_df.empty:
+    if filtro_calificaciones == "Calificados":
+        filtered_df = filtered_df[
+            filtered_df["estado_calificacion"].apply(es_calificado)
+        ]
+    elif filtro_calificaciones == "No calificados":
+        filtered_df = filtered_df[
+            filtered_df["estado_calificacion"].apply(es_no_calificado)
+        ]
+
+if not filtered_df.empty:
+    if filtro_validaciones == "Validados":
+        filtered_df = filtered_df[
+            filtered_df["estado_limpieza"].apply(es_validado)
+        ]
+    elif filtro_validaciones == "No validados":
+        filtered_df = filtered_df[
+            filtered_df["estado_limpieza"].apply(es_no_validado)
+        ]
 
 render_html(f"""
 <div class="result-row">
@@ -1089,7 +1187,7 @@ render_html(f"""
             <span class="dot-green"></span> Calificado / Validado
         </div>
         <div class="legend-orange">
-            <span class="dot-orange"></span> Vigente (Próximo a vencer)
+            <span class="dot-orange"></span> Vigente / Próximo a vencer
         </div>
         <div class="legend-red">
             <span class="dot-red"></span> Vencido
@@ -1108,7 +1206,7 @@ if df.empty:
 elif filtered_df.empty:
     render_html("""
 <div class="empty-state">
-    No se encontraron equipos con ese criterio de búsqueda.
+    No se encontraron equipos con ese criterio de búsqueda o filtros aplicados.
 </div>
 """)
 
