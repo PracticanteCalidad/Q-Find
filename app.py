@@ -8,10 +8,7 @@ import pandas as pd
 import streamlit as st
 
 
-# =========================================================
 # CONFIGURACIÓN GENERAL
-# =========================================================
-
 st.set_page_config(
     page_title="Q-Find",
     page_icon="",
@@ -26,11 +23,7 @@ EXCEL_PATH = os.getenv(
 
 SHEET_NAME = "INDICADORES"
 
-
-# =========================================================
 # RENDER HTML
-# =========================================================
-
 def render_html(markup: str):
     clean_markup = textwrap.dedent(markup).strip()
 
@@ -48,11 +41,7 @@ def render_html(markup: str):
 
     st.markdown(clean_markup, unsafe_allow_html=True)
 
-
-# =========================================================
 # ESTILOS CSS
-# =========================================================
-
 render_html("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
@@ -743,10 +732,7 @@ render_html("""
 </style>
 """)
 
-
-# =========================================================
 # FUNCIONES DE LIMPIEZA Y LECTURA
-# =========================================================
 
 def normalize_text(value):
     if pd.isna(value):
@@ -769,13 +755,11 @@ def normalize_text(value):
 
     return text
 
-
 def normalize_column_name(value):
     text = normalize_text(value)
     text = re.sub(r"[^a-z0-9]+", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
-
 
 def get_column(df, column_name):
     target = normalize_column_name(column_name)
@@ -786,7 +770,6 @@ def get_column(df, column_name):
 
     return None
 
-
 def get_required_column(df, column_name):
     col = get_column(df, column_name)
 
@@ -795,7 +778,6 @@ def get_required_column(df, column_name):
         return None
 
     return col
-
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -818,7 +800,6 @@ def load_data():
     except Exception as error:
         st.error(f"Error leyendo el Excel: {error}")
         return pd.DataFrame()
-
 
 def prepare_data(df):
     if df.empty:
@@ -875,7 +856,6 @@ def prepare_data(df):
 
     return result
 
-
 def format_value(value, default="N/A"):
     if pd.isna(value):
         return default
@@ -893,13 +873,10 @@ def format_value(value, default="N/A"):
 
     return value_str
 
-
 def safe_text(value):
     return html.escape(str(value))
 
-
 DIAS_PROXIMO_A_VENCER = 30
-
 
 def to_number(value):
     try:
@@ -907,7 +884,6 @@ def to_number(value):
         return float(value_str)
     except Exception:
         return None
-
 
 def get_semaforo_class(estado, dias=None):
     estado_normalizado = normalize_text(estado)
@@ -946,7 +922,6 @@ def get_semaforo_class(estado, dias=None):
 
     return "pill-blue"
 
-
 def get_dias_label(estado, dias):
     estado_normalizado = normalize_text(estado)
     dias_numero = to_number(dias)
@@ -956,10 +931,8 @@ def get_dias_label(estado, dias):
 
     return "Días de<br>vigencia"
 
-
 def es_no_calificado(estado):
     return "no calificado" in normalize_text(estado)
-
 
 def es_calificado(estado):
     estado_normalizado = normalize_text(estado)
@@ -969,10 +942,8 @@ def es_calificado(estado):
 
     return not es_no_calificado(estado)
 
-
 def es_no_validado(estado):
     return "no validado" in normalize_text(estado)
-
 
 def es_validado(estado):
     estado_normalizado = normalize_text(estado)
@@ -981,7 +952,6 @@ def es_validado(estado):
         return False
 
     return not es_no_validado(estado)
-
 
 def render_card(row):
     equipo = safe_text(format_value(row.get("equipo", ""), ""))
@@ -1097,11 +1067,7 @@ def render_card(row):
 
     return card_html
 
-
-# =========================================================
 # INTERFAZ
-# =========================================================
-
 render_html("""
 <div class="topbar">
     <div class="brand">
@@ -1121,7 +1087,7 @@ render_html("""
 </div>
 
 <div class="hero-description">
-    Busca por Equipo, Campo de clasificación o Denominación de objeto técnico para verificar el estado calificado del equipo y estado validado del proceso de limpieza y sanitización.
+    Busca por código SAP, código Prebel o nombre del equipo para verificar el estado calificado del equipo y estado validado del proceso de limpieza y sanitización.
 </div>
 """)
 
@@ -1130,7 +1096,7 @@ df = prepare_data(df_raw)
 
 search = st.text_input(
     label="Buscar",
-    placeholder="Ingresa Equipo, Campo de clasificación o Denominación de objeto técnico..."
+    placeholder="Ingresa código SAP, código Prebel o nombre del equipo..."
 )
 
 filter_col_1, filter_col_2 = st.columns(2)
