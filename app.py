@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-
+import plotly.graph_objects as go
 
 # CONFIGURACIÓN GENERAL
 st.set_page_config(
@@ -46,6 +46,16 @@ render_html("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 
+    :root {
+        --fs-hero: clamp(28px, 3vw, 42px);
+        --fs-card-title: clamp(16px, 1.2vw, 20px);
+        --fs-normal: clamp(11px, 0.9vw, 13px);
+        --fs-small: clamp(9px, 0.78vw, 12px);
+        --fs-tooltip: clamp(9px, 0.72vw, 11px);
+        --card-padding-y: clamp(16px, 1.4vw, 22px);
+        --card-padding-x: clamp(14px, 1.4vw, 22px);
+    }
+
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
@@ -78,6 +88,7 @@ render_html("""
         justify-content: space-between;
         align-items: center;
         margin: -1.2rem -1.6rem 2rem -1.6rem;
+        min-width: 0;
     }
 
     .brand {
@@ -140,7 +151,7 @@ render_html("""
     }
 
     .hero-title {
-        font-size: 42px;
+        font-size: var(--fs-hero);
         line-height: 1.08;
         font-weight: 900;
         color: #0f172a;
@@ -156,7 +167,7 @@ render_html("""
 
     .hero-description {
         color: #667085;
-        font-size: 15px;
+        font-size: clamp(13px, 1vw, 15px);
         max-width: 620px;
         margin-bottom: 26px;
         line-height: 1.5;
@@ -225,10 +236,11 @@ render_html("""
         margin-top: 24px;
         margin-bottom: 22px;
         gap: 20px;
+        min-width: 0;
     }
 
     .result-count {
-        font-size: 12px;
+        font-size: var(--fs-small);
         color: #98a2b3;
         letter-spacing: 1.1px;
         font-weight: 900;
@@ -245,15 +257,18 @@ render_html("""
         gap: 18px;
         align-items: center;
         justify-content: flex-end;
-        font-size: 12px;
+        font-size: var(--fs-small);
         font-weight: 900;
         letter-spacing: 1.2px;
         text-transform: uppercase;
         white-space: nowrap;
+        flex-wrap: wrap;
+        min-width: 0;
     }
 
     .dot-green,
-    .dot-red {
+    .dot-red,
+    .dot-orange {
         width: 8px;
         height: 8px;
         border-radius: 999px;
@@ -270,11 +285,6 @@ render_html("""
     }
 
     .dot-orange {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        display: inline-block;
-        margin-right: 7px;
         background: #f97316;
     }
 
@@ -293,7 +303,7 @@ render_html("""
     .cards-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 22px;
+        gap: clamp(14px, 1.5vw, 22px);
         width: 100%;
         align-items: stretch;
     }
@@ -302,11 +312,12 @@ render_html("""
         background: #ffffff;
         border: 1px solid #dfe6f0;
         border-radius: 18px;
-        padding: 22px 22px 18px 22px;
+        padding: var(--card-padding-y) var(--card-padding-x) 18px var(--card-padding-x);
         min-height: 310px;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
         overflow: visible;
         height: 100%;
+        min-width: 0;
     }
 
     .badges {
@@ -314,6 +325,7 @@ render_html("""
         gap: 8px;
         margin-bottom: 13px;
         flex-wrap: wrap;
+        min-width: 0;
     }
 
     .badge {
@@ -323,11 +335,12 @@ render_html("""
         background: #edf3fb;
         color: #334155;
         border-radius: 5px;
-        font-size: 11px;
+        font-size: clamp(9px, 0.72vw, 11px);
         font-weight: 900;
         padding: 4px 8px;
         max-width: 100%;
         overflow-wrap: anywhere;
+        line-height: 1.25;
     }
 
     .badge-prebel {
@@ -336,26 +349,28 @@ render_html("""
     }
 
     .card-title {
-        font-size: 20px;
+        font-size: var(--fs-card-title);
         color: #020617;
         font-weight: 900;
         line-height: 1.2;
-        min-height: 48px;
+        min-height: auto;
         margin-bottom: 18px;
         text-transform: uppercase;
         overflow-wrap: anywhere;
+        word-break: normal;
     }
 
     .status-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         border-top: 1px solid #edf2f7;
         border-bottom: 1px solid #edf2f7;
         margin-bottom: 0;
+        min-width: 0;
     }
 
     .status-box {
-        padding: 18px 16px;
+        padding: clamp(12px, 1.2vw, 18px) clamp(8px, 1vw, 16px);
         min-width: 0;
     }
 
@@ -365,9 +380,9 @@ render_html("""
 
     .status-title-blue,
     .status-title-green {
-        font-size: 12px;
+        font-size: clamp(9px, 0.72vw, 12px);
         font-weight: 900;
-        letter-spacing: 2px;
+        letter-spacing: clamp(1px, 0.15vw, 2px);
         line-height: 1.35;
         text-transform: uppercase;
         margin-bottom: 20px;
@@ -376,21 +391,23 @@ render_html("""
     }
 
     .metric-row {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         margin-bottom: 16px;
         min-height: 28px;
-        gap: 10px;
+        gap: 8px;
+        min-width: 0;
     }
 
     .metric-label {
-        font-size: 12px;
+        font-size: clamp(9px, 0.72vw, 12px);
         color: #98a2b3;
         font-weight: 900;
         letter-spacing: 0.8px;
         text-transform: uppercase;
         min-width: 0;
+        overflow-wrap: anywhere;
     }
 
     .tooltip-label {
@@ -399,6 +416,9 @@ render_html("""
         align-items: center;
         gap: 5px;
         cursor: help;
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
     }
 
     .title-tooltip {
@@ -410,15 +430,16 @@ render_html("""
         position: absolute;
         left: 0;
         bottom: calc(100% + 10px);
-        width: 230px;
+        width: min(210px, calc(100vw - 48px));
+        max-width: min(210px, calc(100vw - 48px));
         background: #0f172a;
         color: #ffffff;
         padding: 9px 11px;
         border-radius: 9px;
-        font-size: 11px;
+        font-size: var(--fs-tooltip);
         font-weight: 700;
         letter-spacing: 0;
-        line-height: 1.35;
+        line-height: 1.3;
         text-transform: none;
         opacity: 0;
         visibility: hidden;
@@ -426,6 +447,9 @@ render_html("""
         transition: all 0.18s ease;
         z-index: 9999;
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+        white-space: normal;
+        overflow-wrap: anywhere;
+        pointer-events: none;
     }
 
     .tooltip-label::before {
@@ -440,6 +464,7 @@ render_html("""
         visibility: hidden;
         transition: all 0.18s ease;
         z-index: 10000;
+        pointer-events: none;
     }
 
     .tooltip-label:hover::after,
@@ -447,6 +472,16 @@ render_html("""
         opacity: 1;
         visibility: visible;
         transform: translateY(0);
+    }
+
+    .status-box:nth-child(2) .tooltip-label::after {
+        left: auto;
+        right: 0;
+    }
+
+    .status-box:nth-child(2) .tooltip-label::before {
+        left: auto;
+        right: 14px;
     }
 
     .tooltip-icon {
@@ -466,16 +501,19 @@ render_html("""
     }
 
     .pill {
-        min-width: 66px;
+        min-width: 54px;
+        max-width: 100%;
         text-align: center;
-        padding: 7px 9px;
+        padding: 6px 7px;
         border-radius: 9px;
-        font-size: 13px;
+        font-size: clamp(10px, 0.78vw, 13px);
         font-weight: 900;
         border: 1px solid #dce4ef;
         color: #16325c;
         background: #f8fafc;
-        white-space: nowrap;
+        white-space: normal;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
     }
 
     .pill-blue {
@@ -512,7 +550,7 @@ render_html("""
 
     .footer-label {
         color: #98a2b3;
-        font-size: 11px;
+        font-size: clamp(9px, 0.72vw, 11px);
         font-weight: 900;
         letter-spacing: 0.9px;
         text-transform: uppercase;
@@ -520,7 +558,7 @@ render_html("""
 
     .footer-value {
         color: #334155;
-        font-size: 13px;
+        font-size: clamp(11px, 0.9vw, 13px);
         font-weight: 800;
         line-height: 1.35;
         overflow-wrap: anywhere;
@@ -536,6 +574,38 @@ render_html("""
         font-weight: 700;
     }
 
+    .side-panel {
+        padding-top: 10px;
+    }
+
+    .side-kpi-label {
+        color: #98a2b3;
+        font-size: clamp(9px, 0.75vw, 11px);
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .side-kpi-value {
+        color: #0f172a;
+        font-size: clamp(26px, 2.8vw, 34px);
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+
+    .side-kpi-subtitle {
+        color: #667085;
+        font-size: clamp(10px, 0.82vw, 12px);
+        font-weight: 700;
+        line-height: 1.4;
+    }
+
+    .side-card-space {
+        margin-bottom: 14px;
+    }
+
     @media (max-width: 1200px) {
         .cards-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -548,6 +618,16 @@ render_html("""
         .status-box:first-child {
             border-right: none;
             border-bottom: 1px solid #edf2f7;
+        }
+
+        .status-box:nth-child(2) .tooltip-label::after {
+            left: 0;
+            right: auto;
+        }
+
+        .status-box:nth-child(2) .tooltip-label::before {
+            left: 14px;
+            right: auto;
         }
     }
 
@@ -596,6 +676,7 @@ render_html("""
 
         .brand-text h1 {
             font-size: 21px;
+            white-space: normal;
         }
 
         .brand-text p {
@@ -675,7 +756,8 @@ render_html("""
         }
 
         .tooltip-label::after {
-            width: 190px;
+            width: min(190px, calc(100vw - 40px));
+            max-width: min(190px, calc(100vw - 40px));
             left: 0;
         }
     }
@@ -725,8 +807,20 @@ render_html("""
         }
 
         .tooltip-label::after {
-            width: 175px;
+            width: min(175px, calc(100vw - 32px));
+            max-width: min(175px, calc(100vw - 32px));
             font-size: 10px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .metric-row {
+            grid-template-columns: 1fr;
+            align-items: flex-start;
+        }
+
+        .pill {
+            justify-self: flex-start;
         }
     }
 </style>
@@ -813,8 +907,13 @@ def prepare_data(df):
     col_estado_calificacion = get_required_column(df, "ESTADO CALIFICACION (VIGENTE/VENCIDO)")
     col_dias_recal = get_required_column(df, "DIAS CONTROL  RECAL")
 
-    col_estado_limpieza = get_required_column(df, "MTTO ESTADO VALIDADO (VIGENTE/VENCIDO)")
+    col_estado_limpieza = get_required_column(df, "ESTADO VALIDACION")
     col_dias_reval = get_required_column(df, "DIAS CONTROL  REVAL")
+
+    col_nombre_proceso_validacion = get_required_column(
+        df,
+        "NOMBRE DE PROCESO DE VALIDACION (INGRESO MANUAL)"
+    )
 
     required_columns = [
         col_equipo,
@@ -825,6 +924,7 @@ def prepare_data(df):
         col_dias_recal,
         col_estado_limpieza,
         col_dias_reval,
+        col_nombre_proceso_validacion,
     ]
 
     if any(col is None for col in required_columns):
@@ -843,6 +943,8 @@ def prepare_data(df):
 
     result["estado_limpieza"] = df[col_estado_limpieza]
     result["dias_limpieza"] = df[col_dias_reval]
+
+    result["nombre_proceso_validacion"] = df[col_nombre_proceso_validacion]
 
     for col in result.columns:
         result[col] = result[col].fillna("")
@@ -952,6 +1054,180 @@ def es_validado(estado):
         return False
 
     return not es_no_validado(estado)
+
+def es_calificado_vigente(estado, dias):
+    estado_normalizado = normalize_text(estado)
+    dias_numero = to_number(dias)
+
+    if estado_normalizado in ["", "n/a", "na"]:
+        return False
+
+    if (
+        "no calificado" in estado_normalizado
+        or "no vigente" in estado_normalizado
+        or "vencido" in estado_normalizado
+        or "pendiente" in estado_normalizado
+        or "rechazado" in estado_normalizado
+        or (dias_numero is not None and dias_numero < 0)
+    ):
+        return False
+
+    return (
+        "vigente" in estado_normalizado
+        or "calificado" in estado_normalizado
+        or "aprobado" in estado_normalizado
+        or "ok" in estado_normalizado
+        or "cumple" in estado_normalizado
+        or (dias_numero is not None and dias_numero >= 0)
+    )
+
+def es_validacion_vigente(estado, dias):
+    estado_normalizado = normalize_text(estado)
+    dias_numero = to_number(dias)
+
+    if estado_normalizado in ["", "n/a", "na"]:
+        return False
+
+    if (
+        "no validado" in estado_normalizado
+        or "no vigente" in estado_normalizado
+        or "vencido" in estado_normalizado
+        or "pendiente" in estado_normalizado
+        or "rechazado" in estado_normalizado
+        or (dias_numero is not None and dias_numero < 0)
+    ):
+        return False
+
+    return (
+        "vigente" in estado_normalizado
+        or "validado" in estado_normalizado
+        or "aprobado" in estado_normalizado
+        or "ok" in estado_normalizado
+        or "cumple" in estado_normalizado
+        or (dias_numero is not None and dias_numero >= 0)
+    )
+
+def has_content(value):
+    if pd.isna(value):
+        return False
+
+    text = str(value).strip()
+
+    if text == "":
+        return False
+
+    if normalize_text(text) in ["nan", "none", "nat", "n/a", "na"]:
+        return False
+
+    return True
+
+def calculate_percentage(value, total):
+    if total <= 0:
+        return 0.0
+    return round((value / total) * 100, 1)
+
+def build_gauge_chart(percent_value):
+    percent_value = max(0, min(100, float(percent_value)))
+
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=percent_value,
+            number={
+                "suffix": "%",
+                "font": {"size": 24, "color": "#0f172a"}
+            },
+            gauge={
+                "axis": {
+                    "range": [0, 100],
+                    "showticklabels": False,
+                    "ticks": ""
+                },
+                "bar": {
+                    "color": "#1769ff",
+                    "thickness": 0.28
+                },
+                "bgcolor": "white",
+                "borderwidth": 0,
+                "steps": [
+                    {"range": [0, 50], "color": "#fee2e2"},
+                    {"range": [50, 80], "color": "#fef3c7"},
+                    {"range": [80, 100], "color": "#dcfce7"},
+                ],
+            }
+        )
+    )
+
+    fig.update_layout(
+        height=160,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="white"
+    )
+
+    return fig
+
+def get_dashboard_kpis(df):
+    if df.empty:
+        return {
+            "total_equipos": 0,
+            "equipos_calificados": 0,
+            "pct_equipos": 0.0,
+            "total_validaciones": 0,
+            "validaciones_validadas": 0,
+            "pct_validaciones": 0.0,
+        }
+
+    # KPI 1: cantidad de equipos
+    total_equipos = int(df["equipo"].apply(has_content).sum())
+
+    equipos_calificados = int(
+        df["estado_calificacion"].apply(es_calificado).sum()
+    )
+
+    pct_equipos = calculate_percentage(
+        equipos_calificados,
+        total_equipos
+    )
+
+    # KPI 2: cantidad de validaciones únicas
+    procesos_df = df[df["nombre_proceso_validacion"].apply(has_content)].copy()
+
+    if not procesos_df.empty:
+        procesos_df["proceso_key"] = (
+            procesos_df["nombre_proceso_validacion"]
+            .astype(str)
+            .str.strip()
+            .apply(normalize_text)
+        )
+
+        procesos_unicos = procesos_df.drop_duplicates(
+            subset=["proceso_key"]
+        ).copy()
+    else:
+        procesos_unicos = pd.DataFrame()
+
+    total_validaciones = int(len(procesos_unicos))
+
+    if not procesos_unicos.empty:
+        validaciones_validadas = int(
+            procesos_unicos["estado_limpieza"].apply(es_validado).sum()
+        )
+    else:
+        validaciones_validadas = 0
+
+    pct_validaciones = calculate_percentage(
+        validaciones_validadas,
+        total_validaciones
+    )
+
+    return {
+        "total_equipos": total_equipos,
+        "equipos_calificados": equipos_calificados,
+        "pct_equipos": pct_equipos,
+        "total_validaciones": total_validaciones,
+        "validaciones_validadas": validaciones_validadas,
+        "pct_validaciones": pct_validaciones,
+    }
 
 def render_card(row):
     equipo = safe_text(format_value(row.get("equipo", ""), ""))
@@ -1080,37 +1356,85 @@ render_html("""
 </div>
 """)
 
-render_html("""
-<div class="hero-title">
-    Consulta el estado de tus<br>
-    equipos en <span>tiempo real.</span>
-</div>
-
-<div class="hero-description">
-    Busca por código SAP, código Prebel o nombre del equipo para verificar el estado calificado del equipo y estado validado del proceso de limpieza y sanitización.
-</div>
-""")
-
 df_raw = load_data()
 df = prepare_data(df_raw)
 
-search = st.text_input(
-    label="Buscar",
-    placeholder="Ingresa código SAP, código Prebel o nombre del equipo..."
-)
+dashboard_kpis = get_dashboard_kpis(df)
+
+hero_col, side_col = st.columns([1.7, 1.1], gap="large")
+
+with hero_col:
+    render_html("""
+    <div class="hero-title">
+        Consulta el estado de tus<br>
+        equipos en <span>tiempo real.</span>
+    </div>
+
+    <div class="hero-description">
+        Busca por código SAP, código Prebel o nombre del equipo para verificar el estado calificado del equipo y estado validado del proceso de limpieza y sanitización.
+    </div>
+    """)
+
+    search = st.text_input(
+        label="Buscar",
+        placeholder="Ingresa código SAP, código Prebel o nombre del equipo..."
+    )
+
+with side_col:
+    render_html('<div class="side-panel"></div>')
+
+    with st.container(border=True):
+        kpi_1_col, gauge_1_col = st.columns([1.1, 1.3])
+
+        with kpi_1_col:
+            render_html(f"""
+            <div class="side-kpi-label">Cantidad de equipos</div>
+            <div class="side-kpi-value">{dashboard_kpis["total_equipos"]}</div>
+            <div class="side-kpi-subtitle">
+                {dashboard_kpis["equipos_calificados"]} calificados
+            </div>
+            """)
+
+        with gauge_1_col:
+            st.plotly_chart(
+                build_gauge_chart(dashboard_kpis["pct_equipos"]),
+                use_container_width=True,
+                config={"displayModeBar": False}
+            )
+
+    render_html('<div class="side-card-space"></div>')
+
+    with st.container(border=True):
+        kpi_2_col, gauge_2_col = st.columns([1.1, 1.3])
+
+        with kpi_2_col:
+            render_html(f"""
+            <div class="side-kpi-label">Cantidad de validaciones L&S</div>
+            <div class="side-kpi-value">{dashboard_kpis["total_validaciones"]}</div>
+            <div class="side-kpi-subtitle">
+                {dashboard_kpis["validaciones_validadas"]} validadas
+            </div>
+            """)
+
+        with gauge_2_col:
+            st.plotly_chart(
+                build_gauge_chart(dashboard_kpis["pct_validaciones"]),
+                use_container_width=True,
+                config={"displayModeBar": False}
+            )
 
 filter_col_1, filter_col_2 = st.columns(2)
 
 with filter_col_1:
     filtro_calificaciones = st.selectbox(
         "Filtro de calificaciones",
-        ["Todos", "Calificados", "No calificados"]
+        ["Todos", "Calificados", "Calificados vigentes", "No calificados"]
     )
 
 with filter_col_2:
     filtro_validaciones = st.selectbox(
         "Filtro de validaciones",
-        ["Todos", "Validados", "No validados"]
+        ["Todos", "Validados", "Validaciones vigentes", "No validados"]
     )
 
 render_html('<div class="filters-space"></div>')
@@ -1126,6 +1450,16 @@ if not filtered_df.empty:
         filtered_df = filtered_df[
             filtered_df["estado_calificacion"].apply(es_calificado)
         ]
+    elif filtro_calificaciones == "Calificados vigentes":
+        filtered_df = filtered_df[
+            filtered_df.apply(
+                lambda row: es_calificado_vigente(
+                    row["estado_calificacion"],
+                    row["dias_calificacion"]
+                ),
+                axis=1
+            )
+        ]
     elif filtro_calificaciones == "No calificados":
         filtered_df = filtered_df[
             filtered_df["estado_calificacion"].apply(es_no_calificado)
@@ -1135,6 +1469,16 @@ if not filtered_df.empty:
     if filtro_validaciones == "Validados":
         filtered_df = filtered_df[
             filtered_df["estado_limpieza"].apply(es_validado)
+        ]
+    elif filtro_validaciones == "Validaciones vigentes":
+        filtered_df = filtered_df[
+            filtered_df.apply(
+                lambda row: es_validacion_vigente(
+                    row["estado_limpieza"],
+                    row["dias_limpieza"]
+                ),
+                axis=1
+            )
         ]
     elif filtro_validaciones == "No validados":
         filtered_df = filtered_df[
